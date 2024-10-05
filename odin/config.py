@@ -164,8 +164,8 @@ def add_maskformer2_video_config(cfg):
     cfg.MODEL.CROSS_VIEW_NUM_LAYERS = [2, 2, 6, 2]
     cfg.USE_GHOST_POINTS = False # featurizes the ghost points and do dot product with them
     cfg.MODEL.DECODER_PANET = False
-    cfg.SCANNET_DATA_DIR = "/projects/katefgroup/language_grounding/mask3d_processed/scannet/train_validation_database.yaml"
-    cfg.S3DIS_DATA_DIR = "/projects/katefgroup/language_grounding/SEMSEG_100k/s3dis/train_validation_database.yaml"
+    cfg.SCANNET_DATA_DIR = "/mnt/data/odin_processed/train_validation_database.yaml"
+    cfg.S3DIS_DATA_DIR = "/mnt/data/odin_processed/train_validation_database.yaml"
     cfg.SKIP_CLASSES = None
     cfg.VISUALIZE = False
     cfg.FEATURE_VIS = False

@@ -192,7 +192,7 @@ class ScannetDatasetMapper:
         if (self.cfg.USE_GHOST_POINTS) and 'ai2thor' not in dataset_name:
             # label_db_filepath = f"{data_dir}/train_validation_database.yaml"
             with open(label_db_filepath) as f:
-                data = yaml.load(f)
+                data = yaml.safe_load(f)
 
             self.scannet_data = {}
             for item in data:

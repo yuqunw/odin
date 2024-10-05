@@ -196,6 +196,8 @@ def load_scannet_json_single(json_file, image_root, dataset_name=None):
         record["length"] = len(imgs)
         record["image_id"] = scene_id
         scene_dataset.append(record)
+    # Sort scene_dataset by scene_id
+    scene_dataset = sorted(scene_dataset, key=lambda x: x["image_id"])
     return scene_dataset
 
 def register_scannet_context_instances_single(name, metadata, json_file, image_root):

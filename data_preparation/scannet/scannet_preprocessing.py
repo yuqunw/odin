@@ -5,6 +5,10 @@ import pandas as pd
 from fire import Fire
 from natsort import natsorted
 from loguru import logger
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from data_preparation.base_preprocessing import BasePreprocessing, load_ply
 
@@ -33,8 +37,14 @@ class ScannetPreprocessing(BasePreprocessing):
             ) as f:
                 # -1 because the last one is always empty
                 split_file = f.read().split("\n")[:-1]
-
-            scans_folder = "scans_test" if mode == "test" else "scans"
+            
+            if mode == 'test':
+                scans_folder = "scans_test"
+            elif mode == 'validation':
+                scans_folder = "val"
+            else:  
+                scans_folder = "train"
+            # scans_folder = "scans_test" if mode == "test" else "scans"
             filepaths = []
             for scene in split_file:
                 filepaths.append(

@@ -7,6 +7,10 @@ from tqdm import tqdm
 from pycococreatortools import pycococreatortools
 import pycocotools.mask as mask_util
 
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
 from odin.global_vars import NAME_MAP20, SCANNET200_NAME_MAP
 from data_preparation.scannet.globals_dirs import DATA_DIR, SPLITS
 

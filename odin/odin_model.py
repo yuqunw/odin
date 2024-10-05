@@ -1215,11 +1215,16 @@ class ODIN(nn.Module):
         result_2ds = []
         for i in range(num_images):
             pred_masks_ = pred_masks[:, i][topk_indices]
+            if pred_masks.shape[-2:] != img_size:
+                # Resize it to the target size
+                pred_masks_ = F.interpolate(
+                    pred_masks_[None], size=img_size, mode="nearest"
+                )[0]
             pred_masks_ = pred_masks_[:, :img_size[0], :img_size[1]]
             masks = pred_masks_ > 0.        
             image_size = masks.shape[-2:]
             
-            assert image_size[0] == img_size[0] and image_size[1] == img_size[1], "image size should be the same"
+            # assert image_size[0] == img_size[0] and image_size[1] == img_size[1], "image size should be the same"
             
             result_2d = Instances(image_size)
             result_2d.pred_masks = masks
@@ -1229,6 +1234,33 @@ class ODIN(nn.Module):
             result_2d.pred_classes = labels_per_image.cpu()
             result_2d.pred_masks = result_2d.pred_masks.cpu()
             result_2ds.append(result_2d)
+        
+        # Save each image separately
+        import os
+        if self.cfg.DEPTH_PREFIX == 'depth_inpainted':
+            save_dir = 'outputs/vis_gt/' + batched_inputs['file_name'].split('/')[-3]
+            eval_dir = '/home/yuqun/research/multi_purpose_nerf/Tracking-Anything-with-DEVA/eval_dir/' + \
+                    'odin_gt/' + batched_inputs['file_name'].split('/')[-3]
+        else:
+            save_dir = 'outputs/vis_mast3r/' + batched_inputs['file_name'].split('/')[-3]
+            eval_dir = '/home/yuqun/research/multi_purpose_nerf/Tracking-Anything-with-DEVA/eval_dir/' + \
+                    'odin_mast3r/' + batched_inputs['file_name'].split('/')[-3]
+        
+        colors = np.random.randint(0, 255, (100, 3))
+        for i, result_2d in enumerate(result_2ds):
+            save_path = f"{save_dir}/{i*20:05d}.png"
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            from PIL import Image
+            # Random colors for each instance
+            masks = result_2d.pred_masks.numpy()
+            masks = masks.argmax(0).reshape(-1)
+            masks_color = colors[masks, :].reshape(*result_2d.pred_masks.shape[1:], 3)
+            masks_color = Image.fromarray(masks_color.astype(np.uint8))
+            masks_color.save(save_path)
+            masks = Image.fromarray(masks.reshape(*result_2d.pred_masks.shape[1:],).astype(np.uint8))
+            os.makedirs(eval_dir, exist_ok=True, )
+            masks.save(eval_dir + f"/{i*20:05d}.png")
+            
         return result_2ds
 
     def inference_video(
