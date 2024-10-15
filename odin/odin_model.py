@@ -975,8 +975,8 @@ class ODIN(nn.Module):
             
             mask_cls_results = outputs["pred_logits"]
             mask_pred_results = outputs["pred_masks"]
-            del outputs
-                
+            # Delete all variables not used later
+            del outputs, features, depths, poses, intrinsics, valids, segments, captions
             # Processing for ghost points
             if self.cfg.USE_GHOST_POINTS and decoder_3d:
                 processed_results = self.eval_ghost(
@@ -993,7 +993,8 @@ class ODIN(nn.Module):
                 num_classes, decoder_3d, multiview_data
             )
 
-                
+            del mask_cls_results, mask_pred_results, 
+            torch.cuda.empty_cache()
             return processed_results
 
     
@@ -1254,9 +1255,9 @@ class ODIN(nn.Module):
             # Random colors for each instance
             masks = result_2d.pred_masks.numpy()
             masks = masks.argmax(0).reshape(-1)
-            masks_color = colors[masks, :].reshape(*result_2d.pred_masks.shape[1:], 3)
-            masks_color = Image.fromarray(masks_color.astype(np.uint8))
-            masks_color.save(save_path)
+            # masks_color = colors[masks, :].reshape(*result_2d.pred_masks.shape[1:], 3)
+            # masks_color = Image.fromarray(masks_color.astype(np.uint8))
+            # masks_color.save(save_path)
             masks = Image.fromarray(masks.reshape(*result_2d.pred_masks.shape[1:],).astype(np.uint8))
             os.makedirs(eval_dir, exist_ok=True, )
             masks.save(eval_dir + f"/{i*20:05d}.png")

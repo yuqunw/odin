@@ -293,8 +293,8 @@ class ODINMultiScaleMaskedTransformerDecoder(nn.Module):
                 ) # b, n, c
 
         else:
-            # if ((self.cfg.HIGH_RES_INPUT and not self.training and not self.cfg.USE_GHOST_POINTS)) and self.cfg.INPUT.VOXELIZE:
-            if ((not self.training and not self.cfg.USE_GHOST_POINTS)) and self.cfg.INPUT.VOXELIZE:
+            if ((self.cfg.HIGH_RES_INPUT and not self.training and not self.cfg.USE_GHOST_POINTS)) and self.cfg.INPUT.VOXELIZE:
+            # if ((not self.training and not self.cfg.USE_GHOST_POINTS)) and self.cfg.INPUT.VOXELIZE:
                 mask_features = mask_features.reshape(bs, v, -1, mask_features.shape[-2], mask_features.shape[-1]).permute(0, 1, 3, 4, 2).flatten(1, 3)
                 mask_features = scatter_mean(
                     mask_features,
