@@ -5,7 +5,7 @@ inference_test_output
 
 detectron2
 SCANNET_COCO
-
+outputs
 *.png
 *.json
 *.diff
