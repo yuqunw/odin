@@ -985,7 +985,6 @@ class ODIN(nn.Module):
                     scannet_idxs, scannet_segments_batched
                 )
                 return processed_results
-            
             # Normal Processing
             processed_results = self.eval_normal(
                 mask_cls_results, mask_pred_results, batched_inputs,
