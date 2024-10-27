@@ -1245,22 +1245,42 @@ class ODIN(nn.Module):
             save_dir = 'outputs/vis_mast3r/' + batched_inputs['file_name'].split('/')[-3]
             eval_dir = '/home/yuqun/research/multi_purpose_nerf/Tracking-Anything-with-DEVA/eval_dir/' + \
                     'odin_mast3r/' + batched_inputs['file_name'].split('/')[-3]
+    
+        # Save result_2ds
+
+        if self.cfg.DEPTH_PREFIX == 'depth_inpainted':
+            restults_2ds_dir = 'outputs/gt_depth_rgbd/'
+        else:
+            restults_2ds_dir = 'outputs/mast3r_depth_rgbd/'
         
+        restults_2ds_dir = restults_2ds_dir + batched_inputs['file_name'].split('/')[-3]
+        os.makedirs(restults_2ds_dir, exist_ok=True)
+        
+
         colors = np.random.randint(0, 255, (100, 3))
         for i, result_2d in enumerate(result_2ds):
-            save_path = f"{save_dir}/{i*20:05d}.png"
+            file_index = int(batched_inputs['file_names'][i].split('/')[-1].split('.')[0])
+            save_path = f"{save_dir}/{file_index:05d}.png"
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             from PIL import Image
             # Random colors for each instance
-            masks = result_2d.pred_masks.numpy()
+            masks = result_2d.pred_masks.float().numpy() * result_2d.scores.numpy()[:, None, None]
             masks = masks.argmax(0).reshape(-1)
             # masks_color = colors[masks, :].reshape(*result_2d.pred_masks.shape[1:], 3)
             # masks_color = Image.fromarray(masks_color.astype(np.uint8))
             # masks_color.save(save_path)
             masks = Image.fromarray(masks.reshape(*result_2d.pred_masks.shape[1:],).astype(np.uint8))
             os.makedirs(eval_dir, exist_ok=True, )
-            masks.save(eval_dir + f"/{i*20:05d}.png")
+            masks.save(eval_dir + f"/{file_index:05d}.png")
             
+            # Save result_2ds
+            file_index = int(batched_inputs['file_names'][i].split('/')[-1].split('.')[0])
+            save_path = f"{restults_2ds_dir}/{file_index:05d}.pth"
+
+            save_result_2d = {}
+            save_result_2d['scores'] = result_2d.scores
+            save_result_2d['pred_classes'] = result_2d.pred_classes
+            torch.save(result_2d, save_path)
         return result_2ds
 
     def inference_video(
