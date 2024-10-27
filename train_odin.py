@@ -152,31 +152,13 @@ class Trainer(DefaultTrainer):
             output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
             os.makedirs(output_folder, exist_ok=True)
         evaluators = []
-        if cfg.TEST.EVAL_3D and cfg.MODEL.DECODER_3D and not use_2d_evaluators_only:
-            if cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON:
-                evaluators.append(
-                        ScannetSemantic3DEvaluator(
-                            dataset_name, 
-                            output_dir=output_folder, 
-                            eval_sparse=cfg.TEST.EVAL_SPARSE,
-                            cfg=cfg
-                        ))
-            if cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON:
-                evaluators.append(
-                        Scannet3DEvaluator(
-                            dataset_name,
-                            output_dir=output_folder,
-                            eval_sparse=cfg.TEST.EVAL_SPARSE,
-                            cfg=cfg
-                        ))
-        if (cfg.TEST.EVAL_2D or cfg.EVAL_PER_IMAGE) and not use_3d_evaluators_only:
-            if cfg.INPUT.ORIGINAL_EVAL:
-                print("Using original COCO Eval, potentially is RAM hungry")
-                evaluators.append(COCOEvaluator(dataset_name, output_dir=output_folder, use_fast_impl=False))
-            else:
-                evaluators.append(COCOEvaluatorMemoryEfficient(
-                    dataset_name, output_dir=output_folder, use_fast_impl=False,
-                    per_image_eval=cfg.EVAL_PER_IMAGE, evaluate_subset=cfg.EVALUATE_SUBSET,))
+        evaluators.append(
+                Scannet3DEvaluator(
+                    dataset_name,
+                    output_dir=output_folder,
+                    eval_sparse=cfg.TEST.EVAL_SPARSE,
+                    cfg=cfg
+                ))
         return evaluators
 
     @classmethod

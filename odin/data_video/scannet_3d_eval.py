@@ -182,10 +182,7 @@ class Scannet3DEvaluator(DatasetEvaluator):
         ground_truths = []
         for input, output in zip(inputs, outputs):
             # output stores the processed gt in case of ghost point experiment
-            if self.cfg.USE_GHOST_POINTS:
-                gt_parse_dict = output['instances_3d']
-            else:
-                gt_parse_dict = input
+            gt_parse_dict = output['instances_3d']
             
             gt = self.parse_gt(gt_parse_dict)
             pred = self.parse_preds(output)

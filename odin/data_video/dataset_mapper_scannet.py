@@ -189,23 +189,23 @@ class ScannetDatasetMapper:
         elif 'matterport' in dataset_name:
             label_db_filepath = self.cfg.MATTERPORT_DATA_DIR
 
-        if (self.cfg.USE_GHOST_POINTS) and 'ai2thor' not in dataset_name:
-            # label_db_filepath = f"{data_dir}/train_validation_database.yaml"
-            with open(label_db_filepath) as f:
-                data = yaml.safe_load(f)
+        # if (self.cfg.USE_GHOST_POINTS) and 'ai2thor' not in dataset_name:
+        # label_db_filepath = f"{data_dir}/train_validation_database.yaml"
+        with open(label_db_filepath) as f:
+            data = yaml.safe_load(f)
 
-            self.scannet_data = {}
-            for item in data:
-                if 's3dis' in dataset_name:
-                    area, room = item['raw_filepath'].split('/')[-2:]
-                    scene_name = f'{area}_{room}'
-                    scene_name = scene_name.lower()
-                elif 'matterport' in dataset_name:
-                    scene_name, region_name = item['filepath'].split('/')[-1].split('.')[0].split('_')
-                    scene_name = f"{scene_name}_region{region_name}"
-                else:
-                    scene_name = item['raw_filepath'].split('/')[-2]
-                self.scannet_data[scene_name] = item
+        self.scannet_data = {}
+        for item in data:
+            if 's3dis' in dataset_name:
+                area, room = item['raw_filepath'].split('/')[-2:]
+                scene_name = f'{area}_{room}'
+                scene_name = scene_name.lower()
+            elif 'matterport' in dataset_name:
+                scene_name, region_name = item['filepath'].split('/')[-1].split('.')[0].split('_')
+                scene_name = f"{scene_name}_region{region_name}"
+            else:
+                scene_name = item['raw_filepath'].split('/')[-2]
+            self.scannet_data[scene_name] = item
             
 
     @classmethod
@@ -439,6 +439,9 @@ class ScannetDatasetMapper:
         if decoder_3d:
             depth_file_names = dataset_dict.pop("depth_file_names", None)
             if self.inpaint_depth:
+                depth_inference_file_names = [
+                    depth_file_names[i].replace("depth", 'depth_inpainted') for i in range(len(depth_file_names))
+                ]                
                 depth_file_names = [
                     depth_file_names[i].replace("depth", self.cfg.DEPTH_PREFIX) for i in range(len(depth_file_names))
                 ]
@@ -479,11 +482,13 @@ class ScannetDatasetMapper:
 
         if decoder_3d:
             dataset_dict["depths"] = []
+            dataset_dict["depth_inferences"] = []
             dataset_dict["poses"] = []
             dataset_dict["intrinsics"] = []
 
             dataset_dict["depth_file_names"] = []
             dataset_dict["pose_file_names"] = []
+            dataset_dict["depth_inference_file_names"] = []
         
         for frame_idx in selected_idx:
             if eval_idx == frame_idx:
@@ -493,6 +498,7 @@ class ScannetDatasetMapper:
 
             if decoder_3d:
                 dataset_dict["depth_file_names"].append(depth_file_names[frame_idx])
+                dataset_dict["depth_inference_file_names"].append(depth_inference_file_names[frame_idx])
                 dataset_dict["pose_file_names"].append(pose_file_names[frame_idx])
 
             image = utils.read_image(file_names[frame_idx], format=self.image_format)
@@ -514,8 +520,14 @@ class ScannetDatasetMapper:
             if decoder_3d:
                 depth = imread(depth_file_names[frame_idx]).astype(np.float32)
                 depth = depth / 1000.0
+
+                depth_inference = imread(depth_inference_file_names[frame_idx]).astype(np.float32)
+                depth_inference = depth_inference / 1000.0
+
                 if self.cfg.IGNORE_DEPTH_MAX != -1:
                     depth[depth > self.cfg.IGNORE_DEPTH_MAX] = 0.0
+                    depth_inference[depth_inference > self.cfg.IGNORE_DEPTH_MAX] = 0.0
+
                 if self.cfg.INPUT.STRONG_AUGS:
                     depth_transforms = deepcopy(transforms)
                     if self.is_train:
@@ -535,6 +547,9 @@ class ScannetDatasetMapper:
                     else:
                         depth_transforms[0].interp = Image.NEAREST
                         depth = T.apply_transform_gens(depth_transforms, T.AugInput(depth))[0].image
+
+                        depth_inference = T.apply_transform_gens(depth_transforms, T.AugInput(depth_inference))[0].image
+
                         intrinsics_ = self.get_intrinsics((depth_transforms[0].new_h, depth_transforms[0].new_w), intrinsic_file=instrinsic_file_names[frame_idx] if instrinsic_file_names is not None else None)
 
                 else:
@@ -594,6 +609,7 @@ class ScannetDatasetMapper:
             image = torch.as_tensor(np.ascontiguousarray(image.transpose(2, 0, 1)))
             if decoder_3d:
                 depth = torch.as_tensor(np.ascontiguousarray(depth))
+                depth_inference = torch.as_tensor(np.ascontiguousarray(depth_inference))
                 pose = torch.from_numpy(pose).float()
                 intrinsics_ = torch.from_numpy(intrinsics_).float()
             if self.supervise_sparse or self.eval_sparse:
@@ -627,6 +643,7 @@ class ScannetDatasetMapper:
             dataset_dict["padding_masks"] = torch.as_tensor(np.ascontiguousarray(padding_mask))
             if decoder_3d:
                 dataset_dict["depths"].append(depth)
+                dataset_dict["depth_inferences"].append(depth_inference)
                 dataset_dict["poses"].append(pose)
 
                 dataset_dict["intrinsics"].append(intrinsics_)
@@ -660,37 +677,35 @@ class ScannetDatasetMapper:
                     
             dataset_dict["all_classes"] = all_classes
                 
-        if self.cfg.USE_GHOST_POINTS and decoder_3d and 'ai2thor' not in self.dataset_name:
-            assert 'scannet' in self.dataset_name or 's3dis' in self.dataset_name or 'matterport' in self.dataset_name
-            scene_name = dataset_dict['file_name'].split('/')[-3]
+        scene_name = dataset_dict['file_name'].split('/')[-3]
+        
+        if 's3dis' in self.dataset_name:
+            scene_name = scene_name.lower()
+        filepath = self.scannet_data[scene_name]['filepath']
+        
+        if 's3dis' in self.dataset_name:
+            sub1, sub2 = filepath.split('s3dis')
+            filepath = f"{sub1}/SEMSEG_100k/s3dis/{sub2}"
+        points = np.load(filepath)
+        coordinates, color, _, segments, labels = (
+            points[:, :3],
+            points[:, 3:6],
+            points[:, 6:9],
+            points[:, 9],
+            points[:, 10:12],
+        )
+        
+        if 's3dis' in self.dataset_name:
+            # s3dis from mask3d follow different convention
+            labels[:, 0] += 1
             
-            if 's3dis' in self.dataset_name:
-                scene_name = scene_name.lower()
-            filepath = self.scannet_data[scene_name]['filepath']
+            # their segments is all 1 and will lead to bugs if USE_SEGMENTS=True
+            segments = np.arange(len(labels))
             
-            if 's3dis' in self.dataset_name:
-                sub1, sub2 = filepath.split('s3dis')
-                filepath = f"{sub1}/SEMSEG_100k/s3dis/{sub2}"
-            points = np.load(filepath)
-            coordinates, color, _, segments, labels = (
-                points[:, :3],
-                points[:, 3:6],
-                points[:, 6:9],
-                points[:, 9],
-                points[:, 10:12],
-            )
-            
-            if 's3dis' in self.dataset_name:
-                # s3dis from mask3d follow different convention
-                labels[:, 0] += 1
-                
-                # their segments is all 1 and will lead to bugs if USE_SEGMENTS=True
-                segments = np.arange(len(labels))
-                
-            dataset_dict["scannet_coords"] = torch.from_numpy(coordinates)
-            dataset_dict["scannet_color"] = torch.from_numpy(color)
-            dataset_dict["scannet_labels"] = torch.from_numpy(labels)
-            dataset_dict["scannet_segments"] = torch.from_numpy(segments)
+        dataset_dict["scannet_coords"] = torch.from_numpy(coordinates)
+        dataset_dict["scannet_color"] = torch.from_numpy(color)
+        dataset_dict["scannet_labels"] = torch.from_numpy(labels)
+        dataset_dict["scannet_segments"] = torch.from_numpy(segments)
 
         dataset_dict["dataset_name"] = self.dataset_name
         dataset_dict['num_classes'] = self.num_classes

@@ -51,6 +51,28 @@ import ipdb
 st = ipdb.set_trace
 
 
+def get_valid_points(depth, pose, img_coor, intrinsic):
+    # K = torch.tensor([577.590698, 0.000000, 318.905426,
+    #                   0.000000, 578.729797, 242.683609,
+    #                   0.000000, 0.000000, 1.000000,]).reshape(3,3)
+    K = intrinsic[:3, :3] # 3x3
+    h, w = depth.shape[-2:]
+    cam_coor = img_coor @ torch.inverse(K).T * depth.permute(1, 2, 0) #h, w, 3 @ 3, 3 -> h, w, 3 * h, w, 1 -> h, w, 3
+
+    ones = torch.ones_like(cam_coor[..., :1]) # h, w, 1
+    h_points = torch.cat((cam_coor, ones), -1).view(-1, 4) # h, w, 4 -> h*w, 4
+
+    # transform using pose to world coordinate
+    projected_mask_cam_coor = (pose @ h_points.t().float()).t()[..., :3].view(h, w, 3)
+
+    # projected_mask_cam_coor = mask_cam_coor.float() @ pose[:3, :3].T - pose[:3, 3]
+    return projected_mask_cam_coor
+
+def get_img_coor(h=480, w=640):
+    y, x = torch.from_numpy(np.mgrid[:h, :w])
+    img_coor = torch.stack((x, y, torch.ones_like(x)), dim=-1)
+    return img_coor   
+
 @META_ARCH_REGISTRY.register()
 class ODIN(nn.Module):
     """
@@ -755,7 +777,9 @@ class ODIN(nn.Module):
     def eval_normal(
             self, mask_cls_results, mask_pred_results, batched_inputs,
             images, shape, targets, num_classes, decoder_3d,
-            multiview_data
+            multiview_data, 
+            scannet_gt_target_dicts, scannet_p2v,  
+            scannet_idxs, segments, scannet_pc
         ):
         bs, v, H_padded, W_padded = shape
         processed_results = []
@@ -780,51 +804,17 @@ class ODIN(nn.Module):
 
             processed_results.append({})
 
-            if self.cfg.EVAL_PER_IMAGE and decoder_3d:
-                instance_r = self.inference_2d_per_image(
-                    mask_cls_result, mask_pred_result,
-                    (height, width), shape_,
-                    batched_inputs[i],
-                    multiview_data=multiview_data_
-                )
-                processed_results[-1]['instances'] = instance_r
+            instance_r = self.inference_2d_per_image(
+                mask_cls_result, mask_pred_result,
+                (height, width), shape_,
+                batched_inputs[i],
+                scannet_gt_target_dicts, scannet_p2v,  
+                scannet_idxs, segments, scannet_pc,
+                multiview_data=multiview_data_, 
+            )
                 
-            if self.cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON and decoder_3d:
-                semantic_r = self.inference_video_semantic(
-                    mask_cls_result, mask_pred_result, image_size,
-                    valids if self.eval_sparse else None,
-                    batched_inputs[i], multiview_data_, shape_
-                )
-                processed_results[-1]["semantic_3d"] = semantic_r
-                
-            output_img_size = None
             
-            if 'coco' in input_per_image['dataset_name']:
-                output_img_size = [input_per_image.get("height"), input_per_image.get('width')]
-                height, width = image_size
-            
-            if self.cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON:
-                instance_r = self.inference_video(
-                    mask_cls_result, mask_pred_result,
-                    height, width,
-                    valids if self.eval_sparse else None,
-                    decoder_3d=decoder_3d, num_classes=num_classes,
-                    batched_inputs=batched_inputs[i], multiview_data=multiview_data_,
-                    shape=shape_, 
-                    output_img_size=output_img_size)
-
-                if decoder_3d:
-                    processed_results[-1]["instances_3d"] = instance_r["3d"]
-                
-                if not decoder_3d:
-                    processed_results[-1]["instances"] = instance_r["2d"]
-
-            if self.cfg.VISUALIZE_3D and decoder_3d:
-                self.visualize_pred_on_ours(
-                    i, images, [bs, v, H_padded, W_padded],
-                    input_per_image, processed_results[-1], 
-                    targets, valids
-                )   
+            processed_results[-1]["instances_3d"] = instance_r["3d"]
     
         return processed_results
           
@@ -910,14 +900,14 @@ class ODIN(nn.Module):
 
         scannet_pc, scannet_gt_target_dicts, scannet_p2v, \
             scannet_segments_batched, scannet_color_batched = None, None, None, None, None
-        if self.cfg.USE_GHOST_POINTS  and decoder_3d:
+        # if self.cfg.USE_GHOST_POINTS  and decoder_3d:
             # scannet_pc = multiview_data['scannet_pc']
-            full_scene_dataset = 'single' in batched_inputs[0]['dataset_name']
-            scannet_pc, scannet_p2v, scannet_gt_target_dicts, scannet_idxs, \
-                scannet_segments_batched, scannet_color_batched = self.load_scannet_data(
-                batched_inputs, multiview_data, do_knn=self.training or not full_scene_dataset,
-                images=images, shape=[bs, v, H_padded, W_padded]
-            )
+        full_scene_dataset = 'single' in batched_inputs[0]['dataset_name']
+        scannet_pc, scannet_p2v, scannet_gt_target_dicts, scannet_idxs, \
+            scannet_segments_batched, scannet_color_batched = self.load_scannet_data(
+            batched_inputs, multiview_data, do_knn=self.training or not full_scene_dataset,
+            images=images, shape=[bs, v, H_padded, W_padded]
+        )
 
         # mask classification target
         if self.cfg.USE_GHOST_POINTS and decoder_3d:
@@ -978,18 +968,20 @@ class ODIN(nn.Module):
             # Delete all variables not used later
             del outputs, features, depths, poses, intrinsics, valids, segments, captions
             # Processing for ghost points
-            if self.cfg.USE_GHOST_POINTS and decoder_3d:
-                processed_results = self.eval_ghost(
-                    mask_cls_results, mask_pred_results, batched_inputs,
-                    scannet_gt_target_dicts, scannet_p2v, num_classes,
-                    scannet_idxs, scannet_segments_batched
-                )
-                return processed_results
+            # if self.cfg.USE_GHOST_POINTS and decoder_3d:
+            #     processed_results = self.eval_ghost(
+            #         mask_cls_results, mask_pred_results, batched_inputs,
+            #         scannet_gt_target_dicts, scannet_p2v, num_classes,
+            #         scannet_idxs, scannet_segments_batched
+            #     )
+            #     return processed_results
             # Normal Processing
             processed_results = self.eval_normal(
                 mask_cls_results, mask_pred_results, batched_inputs,
                 images, [bs, v, H_padded, W_padded], targets,
-                num_classes, decoder_3d, multiview_data
+                num_classes, decoder_3d, multiview_data,
+                scannet_gt_target_dicts, scannet_p2v,
+                scannet_idxs, scannet_segments_batched, scannet_pc
             )
 
             del mask_cls_results, mask_pred_results, 
@@ -1179,7 +1171,8 @@ class ODIN(nn.Module):
         return result_3d
         
     def inference_2d_per_image(self, pred_cls, pred_masks, img_size,
-        shape, batched_inputs, multiview_data=None):
+        shape, batched_inputs, scannet_gt_target_dicts, scannet_p2v, scannet_idxs, 
+        segments, scannet_pc, multiview_data=None,):
         """
         pred_cls: 100 X 19
         pred_masks: 100 X 5 X 480 X 640
@@ -1210,78 +1203,72 @@ class ODIN(nn.Module):
         labels_per_image = labels[topk_indices]
 
         topk_indices = topk_indices // num_classes
+
+        depth_inference = batched_inputs['depth_inference'] # N_image X 480 X 640
+        poses = batched_inputs['poses'] # N_image X 4 X 4
+        K = torch.tensor(batched_inputs['intrinsics'][0][:3, :3]).to(self.device) # 3 X 3
+
+        scene_voxel_size = 0.02
+        processed_3d = {}
+        processed_3d["scannet_gt_masks"] = scannet_gt_target_dicts[0]['masks']
+        processed_3d["scannet_gt_classes"] = scannet_gt_target_dicts[0]['labels'] + 1
+        max_valid_point = scannet_gt_target_dicts[0]['max_valid_points']
+        processed_3d["max_valid_points"] = max_valid_point
         
         num_images = pred_masks.shape[1]
-        result_2ds = []
+
+        image_pc_instance_list = []
+        image_pc_xyz_list = []
+
+        H, W = depth_inference[0].shape
+        img_coors = get_img_coor(H, W).float().to(self.device)
+
         for i in range(num_images):
-            pred_masks_ = pred_masks[:, i][topk_indices]
-            if pred_masks.shape[-2:] != img_size:
-                # Resize it to the target size
-                pred_masks_ = F.interpolate(
-                    pred_masks_[None], size=img_size, mode="nearest"
-                )[0]
-            pred_masks_ = pred_masks_[:, :img_size[0], :img_size[1]]
-            masks = pred_masks_ > 0.        
-            image_size = masks.shape[-2:]
-            
-            # assert image_size[0] == img_size[0] and image_size[1] == img_size[1], "image size should be the same"
-            
-            result_2d = Instances(image_size)
-            result_2d.pred_masks = masks
-            result_2d.pred_boxes = Boxes(torch.zeros(masks.size(0), 4))
-            mask_scores_per_image = (pred_masks_.sigmoid().flatten(1) * result_2d.pred_masks.flatten(1)).sum(1) / (result_2d.pred_masks.flatten(1).sum(1) + 1e-6)
-            result_2d.scores = (scores_per_image * mask_scores_per_image).cpu()
-            result_2d.pred_classes = labels_per_image.cpu()
-            result_2d.pred_masks = result_2d.pred_masks.cpu()
-            result_2ds.append(result_2d)
+            pred_masks_ = pred_masks[:, i] # 5 X 480 X 640
+            depth_image = depth_inference[i].to(self.device)
+            pose = poses[i].to(self.device)
+            point = get_valid_points(depth_image, pose, img_coors, K) # H, W, 3   
+            valid_mask = (depth_image[0] > 0)
+
+            point = point[valid_mask]
+
+            image_pc_xyz_list.append(point) # [num_points, 3]
+            image_pc_instance_list.append(pred_masks_.view(-1, H*W).permute(1,0)[valid_mask.flatten(0,1)]) # [num_points, slot_num]               
         
-        # Save each image separately
-        import os
-        if self.cfg.DEPTH_PREFIX == 'depth_inpainted':
-            save_dir = 'outputs/vis_gt/' + batched_inputs['file_name'].split('/')[-3]
-            eval_dir = '/home/yuqun/research/multi_purpose_nerf/Tracking-Anything-with-DEVA/eval_dir/' + \
-                    'odin_gt/' + batched_inputs['file_name'].split('/')[-3]
-        else:
-            save_dir = 'outputs/vis_mast3r/' + batched_inputs['file_name'].split('/')[-3]
-            eval_dir = '/home/yuqun/research/multi_purpose_nerf/Tracking-Anything-with-DEVA/eval_dir/' + \
-                    'odin_mast3r/' + batched_inputs['file_name'].split('/')[-3]
-    
+        pc_xyz = torch.cat(image_pc_xyz_list, dim=0) # [num_points, 3]
+        pc_instance = torch.cat(image_pc_instance_list, dim=0) # [num_points, slot_num]
+        # pc_semantic = torch.cat(image_pc_semantic_list, dim=0) # [num_points, output_dim]
+        pc_p2v = voxelization(pc_xyz[None], scene_voxel_size)[0] # [num_points, 3]        
+
+        torch.cuda.empty_cache()
         # Save result_2ds
 
-        if self.cfg.DEPTH_PREFIX == 'depth_inpainted':
-            restults_2ds_dir = 'outputs/gt_depth_rgbd/'
-        else:
-            restults_2ds_dir = 'outputs/mast3r_depth_rgbd/'
+        # scene_points_p2v = voxelization(scannet_pc[None], scene_voxel_size)[0] # [num_points, 3]
+        scannet_segments = scatter_min(
+                    scannet_segments, scene_points_p2v, dim=0
+                )[0]        
         
-        restults_2ds_dir = restults_2ds_dir + batched_inputs['file_name'].split('/')[-3]
-        os.makedirs(restults_2ds_dir, exist_ok=True)
+        scene_points_p2v = torch.gather(scannet_segments, 0, scene_points_p2v,)
+        torch.cuda.empty_cache()
+        pred_masks_3d = interpolate_feats_3d(pc_instance[None], pc_xyz[None], pc_p2v[None], \
+                                                scannet_pc[None], scene_points_p2v[None], None, 
+                                                voxelize=True, num_neighbors=10)[0] # [slot_num, num_points]
         
+        pred_masks_3d = pred_masks_3d[topk_indices]
 
-        colors = np.random.randint(0, 255, (100, 3))
-        for i, result_2d in enumerate(result_2ds):
-            file_index = int(batched_inputs['file_names'][i].split('/')[-1].split('.')[0])
-            save_path = f"{save_dir}/{file_index:05d}.png"
-            os.makedirs(os.path.dirname(save_path), exist_ok=True)
-            from PIL import Image
-            # Random colors for each instance
-            masks = result_2d.pred_masks.float().numpy() * result_2d.scores.numpy()[:, None, None]
-            masks = masks.argmax(0).reshape(-1)
-            # masks_color = colors[masks, :].reshape(*result_2d.pred_masks.shape[1:], 3)
-            # masks_color = Image.fromarray(masks_color.astype(np.uint8))
-            # masks_color.save(save_path)
-            masks = Image.fromarray(masks.reshape(*result_2d.pred_masks.shape[1:],).astype(np.uint8))
-            os.makedirs(eval_dir, exist_ok=True, )
-            masks.save(eval_dir + f"/{file_index:05d}.png")
-            
-            # Save result_2ds
-            file_index = int(batched_inputs['file_names'][i].split('/')[-1].split('.')[0])
-            save_path = f"{restults_2ds_dir}/{file_index:05d}.pth"
+        masks = pred_masks_3d > 0.
+        mask_scores_per_image = (pred_masks_3d.sigmoid().flatten(1) * masks.flatten(1)).sum(1) / (masks.flatten(1).sum(1) + 1e-6)
+        result_3d = {
+            "pred_classes": labels_per_image + 1,
+            "pred_masks": masks.flatten(1).permute(1, 0),
+            "pred_scores": scores_per_image * mask_scores_per_image
+        }        
+        processed_3d = processed_3d | result_3d
+        
+        results = {}
+        results['3d'] = processed_3d
 
-            save_result_2d = {}
-            save_result_2d['scores'] = result_2d.scores
-            save_result_2d['pred_classes'] = result_2d.pred_classes
-            torch.save(result_2d, save_path)
-        return result_2ds
+        return results
 
     def inference_video(
         self, pred_cls, pred_masks,
