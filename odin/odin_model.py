@@ -1181,6 +1181,7 @@ class ODIN(nn.Module):
             pred_masks, batched_inputs, multiview_data, shape,
             downsample=False, interp="trilinear"
         )
+        pred_masks = pred_masks[:, :, 8:-8,]
         test_topk_per_image = self.cfg.MODEL.MASK_FORMER.NUM_OBJECT_QUERIES 
         if not self.cfg.MODEL.OPEN_VOCAB:
             scores = F.softmax(pred_cls, dim=-1)[:, :-1]
@@ -1204,7 +1205,7 @@ class ODIN(nn.Module):
 
         topk_indices = topk_indices // num_classes
 
-        depth_inference = batched_inputs['depth_inference'] # N_image X 480 X 640
+        depth_inference = batched_inputs['depth_inferences'] # N_image X 480 X 640
         poses = batched_inputs['poses'] # N_image X 4 X 4
         K = torch.tensor(batched_inputs['intrinsics'][0][:3, :3]).to(self.device) # 3 X 3
 
@@ -1225,7 +1226,7 @@ class ODIN(nn.Module):
 
         for i in range(num_images):
             pred_masks_ = pred_masks[:, i] # 5 X 480 X 640
-            depth_image = depth_inference[i].to(self.device)
+            depth_image = depth_inference[i].to(self.device)[None]
             pose = poses[i].to(self.device)
             point = get_valid_points(depth_image, pose, img_coors, K) # H, W, 3   
             valid_mask = (depth_image[0] > 0)
@@ -1245,13 +1246,15 @@ class ODIN(nn.Module):
 
         # scene_points_p2v = voxelization(scannet_pc[None], scene_voxel_size)[0] # [num_points, 3]
         scannet_segments = scatter_min(
-                    scannet_segments, scene_points_p2v, dim=0
-                )[0]        
-        
-        scene_points_p2v = torch.gather(scannet_segments, 0, scene_points_p2v,)
+                    segments[0], scannet_p2v[0], dim=0
+                )[0]     
+        # scannet_segments = segments[0]   
+        shape = [0, scannet_segments.shape[:2]]
+
+        scene_points_p2v = torch.gather(scannet_segments, 0, scannet_p2v[0],)
         torch.cuda.empty_cache()
-        pred_masks_3d = interpolate_feats_3d(pc_instance[None], pc_xyz[None], pc_p2v[None], \
-                                                scannet_pc[None], scene_points_p2v[None], None, 
+        pred_masks_3d = interpolate_feats_3d(pc_instance[None], pc_xyz[None].float(), pc_p2v[None], \
+                                                scannet_pc, scene_points_p2v[None], shape, 
                                                 voxelize=True, num_neighbors=10)[0] # [slot_num, num_points]
         
         pred_masks_3d = pred_masks_3d[topk_indices]
