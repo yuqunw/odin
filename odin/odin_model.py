@@ -1204,7 +1204,7 @@ class ODIN(nn.Module):
 
         topk_indices = topk_indices // num_classes
 
-        depth_inference = batched_inputs['depth_inference'] # N_image X 480 X 640
+        depth_inference = batched_inputs['depth_inferences'] # N_image X 480 X 640
         poses = batched_inputs['poses'] # N_image X 4 X 4
         K = torch.tensor(batched_inputs['intrinsics'][0][:3, :3]).to(self.device) # 3 X 3
 

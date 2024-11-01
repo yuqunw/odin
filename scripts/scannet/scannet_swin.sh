@@ -1,6 +1,6 @@
 set -e
 
-export DETECTRON2_DATASETS="/mnt/data/odin_processed/frames_square_highres"
+export DETECTRON2_DATASETS="/scratch/bcqn/ywu20/odin_processed/frames_square_highres"
 OMP_NUM_THREADS=8 CUDA_VISIBLE_DEVICES=0 python train_odin.py  --dist-url='tcp://127.0.0.1:8474' --num-gpus 1  --resume --config-file configs/scannet_context/swin_3d.yaml \
 OUTPUT_DIR outputs/test \
 SOLVER.IMS_PER_BATCH 4 \

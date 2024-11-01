@@ -1,6 +1,6 @@
 
 # SAVING DIRECTORY - CHANGE THIS
-DATA_DIR = '/mnt/data/odin_processed/frames_square_highres' # This is path to the folder which contains the RGRB-D data (not scannet point cloud data)
+DATA_DIR = '/scratch/bcqn/ywu20/odin_processed/frames_square_highres' # This is path to the folder which contains the RGRB-D data (not scannet point cloud data)
 SPLITS_PATH = 'splits/scannet_splits'
 
 SPLITS = {

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set environment variables
-export DETECTRON2_DATASETS="/mnt/data/odin_processed"
+export DETECTRON2_DATASETS="/scratch/bcqn/ywu20/odin_processed"
 export OMP_NUM_THREADS="8"
 export CUDA_VISIBLE_DEVICES="0"
 
