@@ -151,10 +151,7 @@ class Scannet3DEvaluator(DatasetEvaluator):
         Takes k image ground-truths, unflatten all images to 3D, 
         and prepares for 3D evaluation format.
         '''
-        if self.cfg.USE_GHOST_POINTS:
-            return self.parse_ghost(inputs)
-        else:
-            return self.parse_normal(inputs)
+        return self.parse_ghost(inputs)
         
     def parse_preds(self, output):
         '''
