@@ -1,6 +1,6 @@
 
 # SAVING DIRECTORY - CHANGE THIS
-DATA_DIR = '/scratch/bcqn/ywu20/odin_processed/ai2thor/SEMSEG_100k_reproduce/ai2thor_frames_512'
+DATA_DIR = '/mnt/data/odin_processed/ai2thor/SEMSEG_100k_reproduce/ai2thor_frames_512'
 SPLITS_PATH = 'splits/ai2thor_splits'
 
 SPLITS = {
