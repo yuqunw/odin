@@ -441,11 +441,17 @@ class ScannetDatasetMapper:
             if self.inpaint_depth:
                 depth_inference_file_names = [
                     depth_file_names[i].replace("depth", 'depth_inpainted') for i in range(len(depth_file_names))
-                ]                
+                ]
                 depth_file_names = [
-                    depth_file_names[i].replace("depth", self.cfg.DEPTH_PREFIX) for i in range(len(depth_file_names))
+                    depth_file_names[i].replace("depth", 'depth_mast3r_swin_resample_4') for i in range(len(depth_file_names))
                 ]
             pose_file_names = dataset_dict.pop("pose_file_names", None)
+            pose_file_names = [
+                    pose_file_names[i].replace("pose", 'pose_mast3r_swin_resample_4') for i in range(len(depth_file_names))
+                ]
+            pose_inference_file_names = [
+                    pose_file_names[i].replace("pose", 'pose_inpainted') for i in range(len(depth_file_names))
+                ]
             
             if 's3dis' in self.dataset_name or 'matterport' in self.dataset_name:
                 instrinsic_file_names = [
@@ -488,10 +494,14 @@ class ScannetDatasetMapper:
 
             dataset_dict["depth_file_names"] = []
             dataset_dict["pose_file_names"] = []
+            dataset_dict["pose_inference_file_names"] = []
             dataset_dict["depth_inference_file_names"] = []
         
         for frame_idx in selected_idx:
             if eval_idx == frame_idx:
+                name_index = file_names[frame_idx].split('/')[-1].split('.')[0]
+                if int(name_index) % 80 != 0: # Hack to get the sparse index 
+                    continue 
                 dataset_dict["file_name"] = file_names[frame_idx]
             dataset_dict["file_names"].append(file_names[frame_idx])
             dataset_dict["image_ids"].append(image_ids[frame_idx])
@@ -500,6 +510,7 @@ class ScannetDatasetMapper:
                 dataset_dict["depth_file_names"].append(depth_file_names[frame_idx])
                 dataset_dict["depth_inference_file_names"].append(depth_inference_file_names[frame_idx])
                 dataset_dict["pose_file_names"].append(pose_file_names[frame_idx])
+                dataset_dict["pose_inference_file_names"].append(pose_inference_file_names[frame_idx])
 
             image = utils.read_image(file_names[frame_idx], format=self.image_format)
             if self.is_train and self.cfg.INPUT.COLOR_AUG:
@@ -556,6 +567,7 @@ class ScannetDatasetMapper:
                     intrinsics_ = self.get_intrinsics(depth.shape, intrinsic_file=instrinsic_file_names[frame_idx] if instrinsic_file_names is not None else None)
                     
                 pose = np.loadtxt(pose_file_names[frame_idx])
+                pose_inference = np.loadtxt(pose_inference_file_names[frame_idx])
 
             # NOTE copy() is to prevent annotations getting changed from applying augmentations
             if not (self.cfg.USE_GHOST_POINTS and decoder_3d) or 'ai2thor' in self.dataset_name:
@@ -611,6 +623,7 @@ class ScannetDatasetMapper:
                 depth = torch.as_tensor(np.ascontiguousarray(depth))
                 depth_inference = torch.as_tensor(np.ascontiguousarray(depth_inference))
                 pose = torch.from_numpy(pose).float()
+                pose_inference = torch.from_numpy(pose_inference).float()
                 intrinsics_ = torch.from_numpy(intrinsics_).float()
             if self.supervise_sparse or self.eval_sparse:
                 if decoder_3d:
@@ -645,6 +658,7 @@ class ScannetDatasetMapper:
                 dataset_dict["depths"].append(depth)
                 dataset_dict["depth_inferences"].append(depth_inference)
                 dataset_dict["poses"].append(pose)
+                dataset_dict["pose_inferences"].append(pose_inference)
 
                 dataset_dict["intrinsics"].append(intrinsics_)
 
