@@ -18,8 +18,8 @@ from odin.global_vars import (
 )
 from odin.utils.misc import all_gather, is_dist_avail_and_initialized
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 
 class Scannet3DEvaluator(DatasetEvaluator):

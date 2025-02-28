@@ -25,8 +25,8 @@ from odin.global_vars import AI2THOR_CLASS_ID_MULTIPLIER, \
     ALFRED_CLASS_ID_MULTIPLIER, MATTERPORT_CLASS_LABELS 
 
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 opt = {}
 opt['overlaps']             = np.append(np.arange(0.5,0.95,0.05), 0.25)

@@ -10,6 +10,7 @@ import yaml
 
 from detectron2.data import DatasetCatalog
 from detectron2.config import configurable
+import cv2
 from detectron2.structures import (
     BitMasks,
     Instances,
@@ -33,8 +34,8 @@ from  odin.global_vars import AI2THOR_CLASS_ID_MULTIPLIER, \
 
 import matplotlib.pyplot as plt
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 __all__ = ["ScannetDatasetMapper"]
 
@@ -496,6 +497,8 @@ class ScannetDatasetMapper:
                 dataset_dict["pose_file_names"].append(pose_file_names[frame_idx])
 
             image = utils.read_image(file_names[frame_idx], format=self.image_format)
+            # Resize image from 640x480 to 320x240
+            image = cv2.resize(image, (320, 240), interpolation=cv2.INTER_AREA)
             if self.is_train and self.cfg.INPUT.COLOR_AUG:
                 image = np.asarray(self.image_augs(image))
             size = image.shape
@@ -514,6 +517,10 @@ class ScannetDatasetMapper:
             if decoder_3d:
                 depth = imread(depth_file_names[frame_idx]).astype(np.float32)
                 depth = depth / 1000.0
+                # Resize depth from 480x640 to 240x320
+                depth = cv2.resize(depth, (320, 240), interpolation=cv2.INTER_NEAREST)
+                # Change nan to 0
+                depth[np.isnan(depth)] = 0.0
                 if self.cfg.IGNORE_DEPTH_MAX != -1:
                     depth[depth > self.cfg.IGNORE_DEPTH_MAX] = 0.0
                 if self.cfg.INPUT.STRONG_AUGS:
@@ -601,6 +608,8 @@ class ScannetDatasetMapper:
                     if 'scannet' in self.dataset_name:
                         valid = Image.open(valid_file_names[frame_idx])
                         valid = np.asarray(valid, dtype=np.float32)
+                        # Resize valid from 480x640 to 240x320
+                        valid = cv2.resize(valid, (320, 240), interpolation=cv2.INTER_NEAREST)
                         valid = transforms.apply_segmentation(valid)
                         valid = torch.from_numpy(valid).bool()
                     else:
@@ -612,6 +621,8 @@ class ScannetDatasetMapper:
             if decoder_3d and self.cfg.USE_SEGMENTS and not self.cfg.USE_GHOST_POINTS:
                 segment = Image.open(segment_file_names[frame_idx])
                 segment = np.asarray(segment, dtype=np.float32)
+                # Resize segment from 480x640 to 240x320
+                segment = cv2.resize(segment, (320, 240), interpolation=cv2.INTER_NEAREST)
                 segment = transforms.apply_segmentation(segment)
                 dataset_dict["segments"].append(
                     torch.from_numpy(segment).to(torch.int64)
@@ -659,7 +670,7 @@ class ScannetDatasetMapper:
                     dataset_dict["instances"] = instances
                     
             dataset_dict["all_classes"] = all_classes
-                
+
         if self.cfg.USE_GHOST_POINTS and decoder_3d and 'ai2thor' not in self.dataset_name:
             assert 'scannet' in self.dataset_name or 's3dis' in self.dataset_name or 'matterport' in self.dataset_name
             scene_name = dataset_dict['file_name'].split('/')[-3]

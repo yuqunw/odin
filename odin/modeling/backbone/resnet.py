@@ -19,8 +19,8 @@ from detectron2.modeling.backbone.build import BACKBONE_REGISTRY
 
 from odin.modeling.meta_arch.cross_view_attention import CrossViewPAnet
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 __all__ = [
     "ResNetBlockBase",

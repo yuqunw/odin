@@ -16,8 +16,8 @@ import re
 
 from odin.global_vars import MATTERPORT_NAME_MAP,  MATTERPORT_NAME_TO_ID
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 
 DATA_PATH = '/projects/katefgroup/language_grounding/SEMSEG_100k/matterport'

@@ -14,8 +14,8 @@ from odin.modeling.transformer_decoder.odin_transformer_decoder import build_tra
 from odin.modeling.pixel_decoder.msdeformattn import build_pixel_decoder
 
 
-import ipdb
-st = ipdb.set_trace
+# #  import ipdb
+# #  st = ipdb.set_trace
 
 @SEM_SEG_HEADS_REGISTRY.register()
 class ODINHead(nn.Module):

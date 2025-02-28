@@ -14,8 +14,8 @@ from detectron2.data.catalog import MetadataCatalog
 
 from pycocotools import mask as coco_mask
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 __all__ = ["COCOInstanceNewBaselineDatasetMapper"]
 

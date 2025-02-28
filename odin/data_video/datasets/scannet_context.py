@@ -26,8 +26,8 @@ SCANNET_CATEGORIES_20 = [
     {'id': key, 'name': item, 'supercategory': 'nyu40' } for key, item in NAME_MAP20.items() 
 ]
 
-import ipdb
-st = ipdb.set_trace
+# #  import ipdb
+# #  st = ipdb.set_trace
 
 
 def _get_dataset_instances_meta(dataset='ai2thor'):

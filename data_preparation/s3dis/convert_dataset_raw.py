@@ -4,12 +4,12 @@ import os
 import shutil
 import imageio
 from PIL import Image
-import ipdb
+#  import ipdb
 import numpy as np
 from natsort import natsorted
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 
 def get_index( color ):
@@ -194,8 +194,8 @@ def parse_scenes(area):
     uiud_to_room = {}
     for pose_file in pose_files:
         _, cam_id, roomtype, room_id, _, frame_id, _, _ = file.split('/')[-1].split('_')
-        if cam_id in uiud_to_room:
-            st()
+        # if cam_id in uiud_to_room:
+        #     st()
         uiud_to_room[cam_id] = roomtype + '_' + room_id
     
     # collect rooms
@@ -302,7 +302,7 @@ if __name__ == '__main__':
     
     merge_scenes = [scene for scene in scenes_area_5a if scene in scenes_area_5b]
     
-    st()
+    # st()
     process_scene('area_5a', 'office_20', scenes_area_5a['office_20'], labels=labels)
     
     # for area_name in areas:

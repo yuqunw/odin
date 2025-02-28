@@ -4,12 +4,12 @@ import os
 import shutil
 import imageio
 from PIL import Image
-import ipdb
+#  import ipdb
 import numpy as np
 from natsort import natsorted
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 
 def get_index( color ):
@@ -69,7 +69,7 @@ def process_pose(frame_id, pose_file, folder_processed_pose, area):
     # # extrinsics
     # A = data['final_camera_rotation']
     # from scipy.spatial.transform import Rotation as R
-    # # import ipdb; ipdb.set_trace()
+    # # #  import ipdb; ipdb.set_trace()
     # A_homo = np.eye(4)
     # A = R.from_euler('xyz', A).as_matrix()
     # A_homo[:3, :3] = A

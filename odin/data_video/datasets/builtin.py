@@ -1,6 +1,6 @@
 import os
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 
 from .scannet_context import (
@@ -36,7 +36,18 @@ _PREDEFINED_SPLITS_CONTEXT20_SCANNET_SINGLE_100K = {
         "frames_square_highres",
         "scannet_highres_two_scene.coco.json",  
     ),
-
+    "scannet_context_instance_train_20cls_single_highres_100k_rgbd": (
+        "frames_square_highres",
+        "scannet20_train.coco.json"
+    ),
+    "scannet_context_instance_val_20cls_single_highres_100k_rgbd": (
+        "frames_square_highres",
+        "scannet20_val.coco.json"
+    ),
+    "scannet_context_instance_train_eval_20cls_single_highres_100k_rgbd": (
+        "frames_square_highres",
+        "scannet20_ten_scene.coco.json"
+    ),
 }
 
 _PREDEFINED_SPLITS_CONTEXT20_SCANNET200_SINGLE_100K = {

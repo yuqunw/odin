@@ -21,8 +21,8 @@ from detectron2.modeling import BACKBONE_REGISTRY, Backbone, ShapeSpec
 from odin.modeling.meta_arch.cross_view_attention import CrossViewPAnet
 
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 class Mlp(nn.Module):
     """Multilayer perceptron."""

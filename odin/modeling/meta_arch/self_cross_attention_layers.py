@@ -7,8 +7,8 @@ from torch.nn import functional as F
 from functools import partial
 
 
-import ipdb
-st = ipdb.set_trace
+# #  import ipdb
+# #  st = ipdb.set_trace
 
 class SelfAttentionLayer(nn.Module):
 

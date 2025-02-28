@@ -10,8 +10,8 @@ from detectron2 import _C
 logger = logging.getLogger(__name__)
 
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 
 class COCOeval_opt(COCOeval):

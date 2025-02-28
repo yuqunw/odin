@@ -14,8 +14,8 @@ CROSS_VIEW_PANET.__doc__ = """
 Registry for cross view panet attention module in MaskFormer.
 """
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 
 @CROSS_VIEW_PANET.register()

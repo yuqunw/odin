@@ -8,8 +8,8 @@ import multiprocessing as mp
 
 import torch
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 DATA_PATH = '/projects/katefgroup/language_grounding/SEMSEG_100k/matterport_2d/'
 HOUSE_SEGMENTATIONS = "/projects/katefgroup/language_grounding/SEMSEG_100k/matterport"

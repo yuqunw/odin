@@ -164,12 +164,12 @@ def add_maskformer2_video_config(cfg):
     cfg.MODEL.CROSS_VIEW_NUM_LAYERS = [2, 2, 6, 2]
     cfg.USE_GHOST_POINTS = False # featurizes the ghost points and do dot product with them
     cfg.MODEL.DECODER_PANET = False
-    cfg.SCANNET_DATA_DIR = "/projects/katefgroup/language_grounding/mask3d_processed/scannet/train_validation_database.yaml"
-    cfg.S3DIS_DATA_DIR = "/projects/katefgroup/language_grounding/SEMSEG_100k/s3dis/train_validation_database.yaml"
+    cfg.SCANNET_DATA_DIR = "/mnt/data/odin_processed/train_validation_database.yaml"
+    cfg.S3DIS_DATA_DIR = "/mnt/data/odin_processed/train_validation_database.yaml"
     cfg.SKIP_CLASSES = None
     cfg.VISUALIZE = False
     cfg.FEATURE_VIS = False
-    cfg.VISUALIZE_LOG_DIR = '/projects/katefgroup/language_grounding/visualizations/default'
+    cfg.VISUALIZE_LOG_DIR = '/mnt/data/odin_processed/visualizations/default'
     cfg.DO_TRILINEAR_INTERPOLATION = True
     cfg.INTERP_NEIGHBORS = 8
     cfg.MODEL.INTERPOLATION_METHOD = "nearest"
@@ -217,8 +217,8 @@ def add_maskformer2_video_config(cfg):
     cfg.INPUT.MIN_SIZE_TEST_2D = cfg.INPUT.MIN_SIZE_TEST
     cfg.INPUT.MAX_SIZE_TEST_2D = cfg.INPUT.MAX_SIZE_TEST
     cfg.INPUT.IMAGE_SIZE_2D = cfg.INPUT.IMAGE_SIZE
-    cfg.MATTERPORT_DATA_DIR = "/projects/katefgroup/language_grounding/mask3d_processed/matterport/train_validation_database.yaml"
-    cfg.SCANNET200_DATA_DIR = "/projects/katefgroup/language_grounding/mask3d_processed/scannet200/train_validation_database.yaml"
+    cfg.MATTERPORT_DATA_DIR = "/mnt/data/odin_processed/matterport/train_validation_database.yaml"
+    cfg.SCANNET200_DATA_DIR = "/mnt/data/odin_processed/scannet200/train_validation_database.yaml"
     cfg.AUGMENT_WITH_3D_SCALE = False
     cfg.REPEAT_S3DIS = False
     cfg.BALANCE_3D_DATASETS = False

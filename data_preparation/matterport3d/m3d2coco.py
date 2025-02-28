@@ -14,8 +14,8 @@ import pycocotools.mask as mask_util
 import pycocotools
 
 from odin.global_vars import MATTERPORT_NAME_MAP
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 
 SPLITS = {

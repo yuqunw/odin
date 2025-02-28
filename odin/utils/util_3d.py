@@ -10,8 +10,8 @@ from odin.global_vars import SCANNET_COLOR_MAP_20
 
 import matplotlib.pyplot as plt
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 import pyviz3d.visualizer as vis
 

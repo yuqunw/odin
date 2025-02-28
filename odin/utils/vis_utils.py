@@ -15,8 +15,8 @@ from .feature_vis import embedding_to_3d_color
 from detectron2.utils.visualizer import Visualizer
 from detectron2.structures import Instances
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 
 def visualize_embeddings(embeddings, words, name='embeddings'):

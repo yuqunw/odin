@@ -64,7 +64,7 @@ class Clustering:
         proposals_idx, proposals_offset = self.cluster_(vertices, labels)
 
         ## debug
-        # import ipdb; ipdb.set_trace()
+        # #  import ipdb; ipdb.set_trace()
         # colors = np.array(create_color_palette())[labels.cpu()]
         # write_triangle_mesh(vertices, colors, None, 'semantics.ply')
 

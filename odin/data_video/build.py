@@ -32,8 +32,8 @@ from detectron2.data.detection_utils import check_metadata_consistency
 
 from detectron2.utils import comm
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 def _compute_num_images_per_worker(cfg: CfgNode):
     num_workers = get_world_size()

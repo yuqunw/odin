@@ -2,8 +2,8 @@ import torch
 import itertools
 
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 def convert_video_instances_to_3d(
     instances_all, num_frames, h_pad, w_pad, device, convert_point_semantic_instance=False, skip_classes=None, 

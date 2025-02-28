@@ -11,8 +11,8 @@ from odin.global_vars import AI2THOR_NAME_TO_ID
 from odin.utils.inpaint_depth import inpaint_depth
 from data_preparation.ai2thor.globals_dirs import DATA_DIR, SPLITS_PATH, SPLITS
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 dataset = prior.load_dataset("procthor-10k")
 

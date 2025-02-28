@@ -18,8 +18,8 @@ from .scannet_3d_eval import Scannet3DEvaluator
 from odin.utils.misc import all_gather, is_dist_avail_and_initialized
 
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 
 def intersection_and_union_gpu(output, target, k, ignore_index=-1):

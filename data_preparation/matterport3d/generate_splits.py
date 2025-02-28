@@ -1,8 +1,8 @@
 import numpy as np
 import os
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 DATA_PATH = "/projects/katefgroup/language_grounding/SEMSEG_100k/matterport_3d"
 FRAME_DIR = "/projects/katefgroup/language_grounding/SEMSEG_100k/matterport_frames"

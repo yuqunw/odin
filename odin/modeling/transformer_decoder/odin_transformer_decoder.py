@@ -19,8 +19,8 @@ from odin.modeling.meta_arch.language_encoder import LanguageEncoder
 from odin.modeling.backproject.backproject import interpolate_feats_3d
 from odin.data_video.sentence_utils import convert_grounding_to_od_logits_batched
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 
 TRANSFORMER_DECODER_REGISTRY = Registry("TRANSFORMER_MODULE")
@@ -293,7 +293,7 @@ class ODINMultiScaleMaskedTransformerDecoder(nn.Module):
                 ) # b, n, c
 
         else:
-            if ((self.cfg.HIGH_RES_INPUT and not self.training and not self.cfg.USE_GHOST_POINTS)) and self.cfg.INPUT.VOXELIZE:
+            if ((self.cfg.HIGH_RES_INPUT and not self.cfg.USE_GHOST_POINTS)) and self.cfg.INPUT.VOXELIZE:
                 mask_features = mask_features.reshape(bs, v, -1, mask_features.shape[-2], mask_features.shape[-1]).permute(0, 1, 3, 4, 2).flatten(1, 3)
                 mask_features = scatter_mean(
                     mask_features,

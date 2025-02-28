@@ -10,8 +10,8 @@ import pycocotools.mask as mask_util
 from odin.global_vars import NAME_MAP20, SCANNET200_NAME_MAP
 from data_preparation.scannet.globals_dirs import DATA_DIR, SPLITS
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 INFO = {
 }

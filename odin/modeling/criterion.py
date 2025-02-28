@@ -16,8 +16,8 @@ from detectron2.projects.point_rend.point_features import (
 
 from odin.utils.misc import is_dist_avail_and_initialized
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 def dice_loss(
         inputs: torch.Tensor,

@@ -8,8 +8,8 @@ from scipy.spatial.transform import Rotation as R
 import math
 
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 
 def get_rotation_transform():
@@ -60,7 +60,9 @@ def augment_depth_numpy(xyz, scannet_pc=None, do_rot_scale=False):
         mean = scannet_pc.mean(1, keepdims=True)
         scannet_pc -= mean
     else:
-        mean = xyz.mean(1, keepdims=True)
+        # mean = xyz.mean(1, keepdims=True)
+        # Non nan mean
+        mean = np.nanmean(xyz, axis=1, keepdims=True)
 
     xyz -= mean
     
@@ -70,8 +72,10 @@ def augment_depth_numpy(xyz, scannet_pc=None, do_rot_scale=False):
             scannet_pc.max(1, keepdims=True)) / 2.0
         scannet_pc += noise
     else:
-        noise = np.random.uniform(xyz.min(1, keepdims=True),
-            xyz.max(1, keepdims=True)) / 2.0
+        # Non nan min and max
+        min_val = np.nanmin(xyz, axis=1, keepdims=True)
+        max_val = np.nanmax(xyz, axis=1, keepdims=True)
+        noise = np.random.uniform(min_val, max_val) / 2.0
 
     xyz += noise
 

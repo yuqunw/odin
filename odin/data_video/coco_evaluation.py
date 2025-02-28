@@ -29,8 +29,8 @@ from detectron2.evaluation import DatasetEvaluator
 from odin.global_vars import CLASS_NAME_DICT
 
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 
 class COCOEvaluatorMemoryEfficient(DatasetEvaluator):
@@ -135,8 +135,8 @@ class COCOEvaluatorMemoryEfficient(DatasetEvaluator):
         self._cpu_device = torch.device("cpu")
 
         self._metadata = MetadataCatalog.get(dataset_name)
-        if not os.path.isfile(self._metadata.json_file):
-            st()
+        # if not os.path.isfile(self._metadata.json_file):
+        #     st()
         if not hasattr(self._metadata, "json_file"):
             if output_dir is None:
                 raise ValueError(

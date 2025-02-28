@@ -47,8 +47,8 @@ import wandb
 
 logger = logging.getLogger(__name__)
 
-import ipdb 
-st = ipdb.set_trace
+#  import ipdb 
+#  st = ipdb.set_trace
 
 
 @META_ARCH_REGISTRY.register()
@@ -898,9 +898,9 @@ class ODIN(nn.Module):
         else:
             features = self.backbone(images.tensor, decoder_3d=decoder_3d)
         
-        # check for nans in features
-        if torch.isnan(features['res4']).any():
-            st()
+        # # check for nans in features
+        # if torch.isnan(features['res4']).any():
+        #     st()
         
         idxs = None
         if decoder_3d and not self.cfg.USE_GHOST_POINTS:

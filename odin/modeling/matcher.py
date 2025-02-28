@@ -9,8 +9,8 @@ from scipy.optimize import linear_sum_assignment
 from torch import nn
 from torch.cuda.amp import autocast
 
-import ipdb
-st = ipdb.set_trace
+#  import ipdb
+#  st = ipdb.set_trace
 
 from detectron2.projects.point_rend.point_features import point_sample
 
